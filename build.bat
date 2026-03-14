@@ -21,7 +21,7 @@ fxc.exe /nologo /E PSMain /T ps_5_0 /Fo shaders\ps_dummy.cso dummy.hlsl
 echo.
 
 echo Compiling main.cpp...
-cl.exe /EHsc /W4 /Ox /nologo main.cpp /link /OUT:Game.exe d3d11.lib dxgi.lib user32.lib
+cl.exe /EHsc /W4 /Ox /MT /nologo main.cpp /link /OUT:Game.exe d3d11.lib dxgi.lib user32.lib
 
 if %errorlevel% neq 0 goto :error
 echo.

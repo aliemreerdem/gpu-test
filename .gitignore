@@ -22,3 +22,6 @@
 
 # AI/Agent Data
 .agent/
+
+# Release Packages
+*.zip
