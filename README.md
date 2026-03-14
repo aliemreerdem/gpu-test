@@ -8,7 +8,7 @@ An advanced, native C++ GPU profiling and stress-testing application engineered 
 - **11 Modular Workloads:** Includes dedicated kernels for ALU Math, VRAM Bandwidth Thrashing, Crypto Hashing, Particle Physics (N-Body), and Ray Tracing Tensor Math.
 - **AAA Game Simulations:** Simulates the hardware bottlenecks of specific rendering architectures (e.g., Deferred G-Buffers, RPG Isometric grids, Open-World Volumetric Ray-Marching).
 - **Automated Benchmarking:** Sequential execution suite that runs all 11 kernels and logs performance data (Telemetry) to a CSV file (`benchmark_results.csv`) with automatic Average FPS calculations.
-- **Universal Deployment:** Shaders are pre-compiled offline (`.cso`) using Microsoft `fxc.exe`, completely removing the need for runtime D3DCompiler dependencies on the host machine.
+- **Portability & Standalone Design:** Project is compiled with the `/MT` flag to statically link MSVC runtime libraries. `Game.exe` can be copied to any Windows PC and executed flawlessly without requiring users to download the Visual C++ Redistributable.
 - **Hardware Telemetry:** Auto-detects installed DXGI Display Adapters and native VRAM capacities, allowing targeted stress testing on Dual-GPU laptops (IGP vs Dedicated).
 
 ## 🛡️ AMD Adrenalin & Hardware Heuristics Bypass
@@ -30,19 +30,31 @@ The architecture includes the following active bypasses:
 - **Shading Language:** HLSL (High-Level Shader Language)
 - **Compiler/Toolchain:** Microsoft Visual Studio C++ Compiler (`cl.exe`), DirectX Shader Compiler (`fxc.exe`)
 
+## 📁 Repository Structure
+
+- `/docs`: Contains advanced telemetry bypass deep-dives (`gpu_stress_tester_heuristics_guide.md`) and development notes.
+- `/shaders`: Stores pre-compiled binary shader payloads (`.cso`) to prevent runtime overhead.
+- `main.cpp`: Core DXGI/D3D11 setup, Windowed Context creation, and continuous benchmark looping logic.
+- `stress.hlsl`: Source of all 11 extreme GPU Compute algorithms.
+
 ## ⚙️ Building and Execution
 
 Ensure you are running from a **"x64 Native Tools Command Prompt for VS 202* "** environment before compilation.
 
-1. **Compile the Shaders and C++ Runtime:**
-   Simply execute the provided batch script. This will compile all `.hlsl` files into `.cso` objects, and link `main.cpp`.
+1. **Compile for Development:**
+   Execute `build.bat` or `run.bat` (which automatically locates `vcvars64`). This compiles all `.hlsl` files into the `shaders/` directory and statically links `main.cpp` using `/MT`.
    ```bat
-   ./build.bat
+   .\run.bat
    ```
-2. **Run the Stress Tester:**
+2. **Compile as a Standalone Release (Portable ZIP):**
+   If you wish to deploy the software to other machines, run the dedicated release packager. This will compile the code and use PowerShell to automatically generate `GPU_Stress_Tester_Release.zip` containing everything you need to run out-of-the-box.
+   ```bat
+   .\release.bat
+   ```
+3. **Run the Stress Tester:**
    *(Note: Target executable must retain a 'game-like' name to trigger certain graphics overlays).*
    ```bat
-   ./Game.exe
+   .\Game.exe
    ```
 
 ## 📝 Performance Logging

@@ -43,10 +43,10 @@
 # Visual Studio / C++ / DirectX Built Files
 *.cso
 
-# Logs and Outputs
+# Logs and Data Outputs
 *.log
-benchmark_results.csv
-build_output.log
+*.csv
+*.txt
 
 # IDEs
 .vs/
@@ -56,3 +56,9 @@ build_output.log
 # Temporary files
 *.tmp
 *.bak
+
+# AI/Agent Data
+.agent/
+
+# Release Packages
+*.zip
