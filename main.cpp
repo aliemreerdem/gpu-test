@@ -17,7 +17,7 @@
 #define SAFE_RELEASE(p) if (p) { (p)->Release(); (p) = nullptr; }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (uMsg == WM_DESTROY) {
+    if (uMsg == WM_CLOSE) {
         PostQuitMessage(0);
         return 0;
     }
@@ -370,12 +370,12 @@ int main()
         }
     }
 
-    bool bForceQuit = false;
-
     // ==========================================
     // Core Execution Function (Supports Looping)
     // ==========================================
     auto RunBenchmarkKernel = [&](int currentTestMode, const char* kernelStr, int totalElements) -> int {
+        bool bForceQuit = false; // Reset the force quit flag for each benchmark execution
+        
         std::cout << "\n--------------------------------------------------" << std::endl;
         std::cout << ">>> Running Workload: " << kernelStr << "..." << std::endl;
         std::cout << "--------------------------------------------------" << std::endl;
