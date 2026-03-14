@@ -17,7 +17,7 @@
 #define SAFE_RELEASE(p) if (p) { (p)->Release(); (p) = nullptr; }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (uMsg == WM_DESTROY) {
+    if (uMsg == WM_CLOSE) {
         PostQuitMessage(0);
         return 0;
     }
@@ -55,22 +55,20 @@ void LogErrorToFile(const std::string& message, HRESULT hr = S_OK) {
 
 const int NUM_ELEMENTS = 1024 * 1024 * 16; 
 
-int main(int argc, char* argv[])
+int main()
 {
     try {
-        int testMode = 0;
-        int durationSeconds = -1;
+        // V25: Persistent execution loop
+        while (true) {
+            int testMode = 0;
+            int durationSeconds = -1;
 
-    std::cout << "=======================================" << std::endl;
-    std::cout << "  GPU Stress Tester v2 (DirectX 11)" << std::endl;
-    std::cout << "=======================================" << std::endl;
+            std::cout << "=======================================" << std::endl;
+            std::cout << "  GPU Stress Tester v2 (DirectX 11)" << std::endl;
+            std::cout << "=======================================" << std::endl;
 
-    if (argc >= 3) {
-        testMode = std::stoi(argv[1]);
-        durationSeconds = std::stoi(argv[2]);
-    } else {
-        std::cout << "\nTest Modes:" << std::endl;
-        std::cout << "1. ALU Math Stress (Stresses GPU Compute Cores - High Temp)" << std::endl;
+            std::cout << "\nTest Modes:" << std::endl;
+            std::cout << "1. ALU Math Stress (Stresses GPU Compute Cores - High Temp)" << std::endl;
         std::cout << "2. VRAM Memory Bandwidth (Stresses GPU VRAM and Bus)" << std::endl;
         std::cout << "3. Simulated Game Workload (Mixed ALU + Memory)" << std::endl;
         std::cout << "4. Crypto Hashing Simulation (Integer & Bitwise Operations)" << std::endl;
@@ -86,15 +84,22 @@ int main(int argc, char* argv[])
         while (testMode < 1 || testMode > 12) {
             std::cout << "\nSelect test mode (1-12): ";
             std::cin >> testMode;
+            if (std::cin.fail()) {
+                std::cin.clear();
+                std::cin.ignore(10000, '\n');
+            }
         }
 
         while (durationSeconds < 0) {
             std::cout << "Enter duration in seconds (0 for infinite): ";
             std::cin >> durationSeconds;
+            if (std::cin.fail()) {
+                std::cin.clear();
+                std::cin.ignore(10000, '\n');
+            }
         }
-    }
 
-    const char* kernelName = "CSMath";
+            const char* kernelName = "CSMath";
     if (testMode == 2) kernelName = "CSMemory";
     if (testMode == 3) kernelName = "CSGame";
     if (testMode == 4) kernelName = "CSCrypto";
@@ -144,7 +149,9 @@ int main(int argc, char* argv[])
     if (vAdapters.size() > 1) {
         std::cout << "\nMultiple GPUs detected. Enter GPU index (0-" << vAdapters.size() - 1 << ") to test: ";
         std::cin >> selectedGpuIndex;
-        if (selectedGpuIndex < 0 || selectedGpuIndex >= vAdapters.size()) {
+        if (std::cin.fail() || selectedGpuIndex < 0 || selectedGpuIndex >= vAdapters.size()) {
+            std::cin.clear();
+            std::cin.ignore(10000, '\n');
             std::cout << "Invalid index, defaulting to 0." << std::endl;
             selectedGpuIndex = 0;
         }
@@ -203,9 +210,9 @@ int main(int argc, char* argv[])
     // Enforce DPI awareness to prevent Windows 11 virtualized desktop scaling
     SetProcessDPIAware(); 
     
-    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    std::cout << "Detected Native Resolution: " << screenWidth << "x" << screenHeight << std::endl;
+    int screenWidth = 1920;
+    int screenHeight = 1080;
+    std::cout << "Target Resolution: " << screenWidth << "x" << screenHeight << " (Windowed)" << std::endl;
 
     WNDCLASS wc = {0};
     wc.lpfnWndProc = WindowProc;
@@ -213,9 +220,15 @@ int main(int argc, char* argv[])
     wc.lpszClassName = "GPUStressClass";
     RegisterClass(&wc);
 
+    // Calculate window size based on desired 1920x1080 client area size
+    RECT wr = {0, 0, screenWidth, screenHeight};
+    AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+
     HWND hwnd = CreateWindowEx(
-        0, "GPUStressClass", "GPU Stress Tester V2 - TRUE BORDERLESS",
-        WS_POPUP | WS_VISIBLE, 0, 0, screenWidth, screenHeight,
+        0, "GPUStressClass", "GPU Stress Tester V2 - WINDOWED FULL HD",
+        WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
+        CW_USEDEFAULT, CW_USEDEFAULT, 
+        wr.right - wr.left, wr.bottom - wr.top,
         nullptr, nullptr, wc.hInstance, nullptr);
     ShowWindow(hwnd, SW_SHOW);
     SetForegroundWindow(hwnd);
@@ -239,9 +252,9 @@ int main(int argc, char* argv[])
     scDesc.SampleDesc.Count = 1;
     scDesc.Windowed = TRUE;
     scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // Mandatory for AMD metric hooks on Hybrid Graphics (dGPU->iGPU presentation)
-
-    // V22: Modern games use CPU-GPU pacing to sync frames, an architecture tracked by AMD
-    scDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+    // V24: Removing DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING.
+    // In Windowed mode, if the display lacks VRR, this flag causes Present() to silently fail (DXGI_ERROR_INVALID_CALL).
+    scDesc.Flags = 0;
 
     IDXGISwapChain* pSwapChain = nullptr;
     hr = pDXGIFactory->CreateSwapChain(pDevice, &scDesc, &pSwapChain);
@@ -357,12 +370,12 @@ int main(int argc, char* argv[])
         }
     }
 
-    bool bForceQuit = false;
-
     // ==========================================
     // Core Execution Function (Supports Looping)
     // ==========================================
     auto RunBenchmarkKernel = [&](int currentTestMode, const char* kernelStr, int totalElements) -> int {
+        bool bForceQuit = false; // Reset the force quit flag for each benchmark execution
+        
         std::cout << "\n--------------------------------------------------" << std::endl;
         std::cout << ">>> Running Workload: " << kernelStr << "..." << std::endl;
         std::cout << "--------------------------------------------------" << std::endl;
@@ -490,7 +503,9 @@ int main(int argc, char* argv[])
                 }
             }
 
-            // V18/V19: Re-bind EVERYTHING every frame, including the new Depth/Stencil buffer.
+            // Tests 1-9 natively push 16.7 Million items at once to maximize raw GPU/VRAM heat, ignoring FPS metrics.
+            int dispatchSize = totalElements;
+            
             pContext->OMSetRenderTargets(1, &pRenderTargetView, pDepthStencilView);
             pContext->RSSetViewports(1, &vp);
             if (pDummyVS) pContext->VSSetShader(pDummyVS, nullptr, 0);
@@ -526,15 +541,17 @@ int main(int argc, char* argv[])
             // Bind Compute Shader and UAVs right before dispatch
             pContext->CSSetShader(pComputeShader, nullptr, 0);
             pContext->CSSetUnorderedAccessViews(0, (currentTestMode == 9) ? 4 : 2, uavs, nullptr);
-            pContext->Dispatch(totalElements / 256, 1, 1);
+            pContext->Dispatch(dispatchSize / 256, 1, 1);
             
-            // Note: DO NOT call pContext->Flush() here. 
-            // Calling Flush forces the command queue to submit the Draw and Compute commands 
-            // BEFORE the Present packet. This strips the 3D activity from the Present() ticket 
-            // and tricks AMD/MSI overlays into thinking the frame was completely empty (0 FPS).
+            // V27: Forcing GPU execution synchronization.
+            // Since we abandoned the artificial AMD FPS metric constraint for Tests 1-9, 
+            // the DirectX command queue will buffer these massive compute payloads instantly,
+            // causing the CPU `while` loop to hit the 5-second timer in < 1 second.
+            // Flushing the context forces the GPU to physically execute the queued work, 
+            // maximizing hardware heat and aligning the CPU timer with true GPU execution time.
+            pContext->Flush();
             
-            // Present with DXGI_PRESENT_ALLOW_TEARING to force unbound frames to the composition queue
-            pSwapChain->Present(0, DXGI_PRESENT_ALLOW_TEARING); 
+            pSwapChain->Present(0, 0); 
             
             totalDispatches++;
             dispatchesSinceLastFps++;
@@ -632,20 +649,37 @@ int main(int argc, char* argv[])
             Sleep(3000); 
         }
         std::cout << "\n[SUCCESS] Automated Suite Completed All 11 Tests!" << std::endl;
-    } else {
-        RunBenchmarkKernel(testMode, kernelName, elements);
-    }
+        } else {
+            RunBenchmarkKernel(testMode, kernelName, elements);
+        }
 
-    // Final Core Cleanup
-    SAFE_RELEASE(pDepthStencilState);
-    SAFE_RELEASE(pConstantBuffer);
-    SAFE_RELEASE(pDummyVS);
-    SAFE_RELEASE(pDummyPS);
-    SAFE_RELEASE(pDepthStencilView);
-    SAFE_RELEASE(pRenderTargetView);
-    SAFE_RELEASE(pSwapChain);
-    SAFE_RELEASE(pContext);
-    SAFE_RELEASE(pDevice);
+        // Final Core Cleanup for this specific run
+        SAFE_RELEASE(pDepthStencilState);
+        SAFE_RELEASE(pConstantBuffer);
+        SAFE_RELEASE(pDummyVS);
+        SAFE_RELEASE(pDummyPS);
+        SAFE_RELEASE(pDepthStencilView);
+        SAFE_RELEASE(pRenderTargetView);
+        SAFE_RELEASE(pSwapChain);
+        SAFE_RELEASE(pContext);
+        SAFE_RELEASE(pDevice);
+
+        // Close the rendering window to avoid ghost windows stacking up on loop
+        if (hwnd) {
+            DestroyWindow(hwnd);
+        }
+        UnregisterClass("GPUStressClass", GetModuleHandle(nullptr));
+
+        std::cout << "\n*** Test Finished! ***\n";
+        
+        // Clear any accidental keystrokes buffered during the test before pausing
+        std::cin.clear();
+        std::cin.ignore(10000, '\n');
+        
+        system("pause"); // "Press any key to continue..."
+        system("cls");  // Clear screen for the next run
+        
+        } // End of while(true)
 
     } catch (const std::exception& e) {
         LogErrorToFile(std::string("Fatal C++ Exception: ") + e.what());
