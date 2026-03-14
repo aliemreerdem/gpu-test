@@ -649,6 +649,12 @@ int main(int argc, char* argv[])
         SAFE_RELEASE(pContext);
         SAFE_RELEASE(pDevice);
 
+        // Close the rendering window to avoid ghost windows stacking up on loop
+        if (hwnd) {
+            DestroyWindow(hwnd);
+        }
+        UnregisterClass("GPUStressClass", GetModuleHandle(nullptr));
+
         std::cout << "\n*** Test Finished! Press [Enter] to return to the main menu... ***\n";
         std::cin.ignore(10000, '\n');
         std::cin.get();
