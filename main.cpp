@@ -58,19 +58,17 @@ const int NUM_ELEMENTS = 1024 * 1024 * 16;
 int main(int argc, char* argv[])
 {
     try {
-        int testMode = 0;
-        int durationSeconds = -1;
+        // V25: Persistent execution loop
+        while (true) {
+            int testMode = 0;
+            int durationSeconds = -1;
 
-    std::cout << "=======================================" << std::endl;
-    std::cout << "  GPU Stress Tester v2 (DirectX 11)" << std::endl;
-    std::cout << "=======================================" << std::endl;
+            std::cout << "=======================================" << std::endl;
+            std::cout << "  GPU Stress Tester v2 (DirectX 11)" << std::endl;
+            std::cout << "=======================================" << std::endl;
 
-    if (argc >= 3) {
-        testMode = std::stoi(argv[1]);
-        durationSeconds = std::stoi(argv[2]);
-    } else {
-        std::cout << "\nTest Modes:" << std::endl;
-        std::cout << "1. ALU Math Stress (Stresses GPU Compute Cores - High Temp)" << std::endl;
+            std::cout << "\nTest Modes:" << std::endl;
+            std::cout << "1. ALU Math Stress (Stresses GPU Compute Cores - High Temp)" << std::endl;
         std::cout << "2. VRAM Memory Bandwidth (Stresses GPU VRAM and Bus)" << std::endl;
         std::cout << "3. Simulated Game Workload (Mixed ALU + Memory)" << std::endl;
         std::cout << "4. Crypto Hashing Simulation (Integer & Bitwise Operations)" << std::endl;
@@ -88,13 +86,12 @@ int main(int argc, char* argv[])
             std::cin >> testMode;
         }
 
-        while (durationSeconds < 0) {
-            std::cout << "Enter duration in seconds (0 for infinite): ";
-            std::cin >> durationSeconds;
-        }
-    }
+            while (durationSeconds < 0) {
+                std::cout << "Enter duration in seconds (0 for infinite): ";
+                std::cin >> durationSeconds;
+            }
 
-    const char* kernelName = "CSMath";
+            const char* kernelName = "CSMath";
     if (testMode == 2) kernelName = "CSMemory";
     if (testMode == 3) kernelName = "CSGame";
     if (testMode == 4) kernelName = "CSCrypto";
@@ -203,9 +200,9 @@ int main(int argc, char* argv[])
     // Enforce DPI awareness to prevent Windows 11 virtualized desktop scaling
     SetProcessDPIAware(); 
     
-    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    std::cout << "Detected Native Resolution: " << screenWidth << "x" << screenHeight << std::endl;
+    int screenWidth = 1920;
+    int screenHeight = 1080;
+    std::cout << "Target Resolution: " << screenWidth << "x" << screenHeight << " (Windowed)" << std::endl;
 
     WNDCLASS wc = {0};
     wc.lpfnWndProc = WindowProc;
@@ -213,9 +210,15 @@ int main(int argc, char* argv[])
     wc.lpszClassName = "GPUStressClass";
     RegisterClass(&wc);
 
+    // Calculate window size based on desired 1920x1080 client area size
+    RECT wr = {0, 0, screenWidth, screenHeight};
+    AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+
     HWND hwnd = CreateWindowEx(
-        0, "GPUStressClass", "GPU Stress Tester V2 - TRUE BORDERLESS",
-        WS_POPUP | WS_VISIBLE, 0, 0, screenWidth, screenHeight,
+        0, "GPUStressClass", "GPU Stress Tester V2 - WINDOWED FULL HD",
+        WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
+        CW_USEDEFAULT, CW_USEDEFAULT, 
+        wr.right - wr.left, wr.bottom - wr.top,
         nullptr, nullptr, wc.hInstance, nullptr);
     ShowWindow(hwnd, SW_SHOW);
     SetForegroundWindow(hwnd);
@@ -239,9 +242,9 @@ int main(int argc, char* argv[])
     scDesc.SampleDesc.Count = 1;
     scDesc.Windowed = TRUE;
     scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // Mandatory for AMD metric hooks on Hybrid Graphics (dGPU->iGPU presentation)
-
-    // V22: Modern games use CPU-GPU pacing to sync frames, an architecture tracked by AMD
-    scDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+    // V24: Removing DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING.
+    // In Windowed mode, if the display lacks VRR, this flag causes Present() to silently fail (DXGI_ERROR_INVALID_CALL).
+    scDesc.Flags = 0;
 
     IDXGISwapChain* pSwapChain = nullptr;
     hr = pDXGIFactory->CreateSwapChain(pDevice, &scDesc, &pSwapChain);
@@ -533,8 +536,7 @@ int main(int argc, char* argv[])
             // BEFORE the Present packet. This strips the 3D activity from the Present() ticket 
             // and tricks AMD/MSI overlays into thinking the frame was completely empty (0 FPS).
             
-            // Present with DXGI_PRESENT_ALLOW_TEARING to force unbound frames to the composition queue
-            pSwapChain->Present(0, DXGI_PRESENT_ALLOW_TEARING); 
+            pSwapChain->Present(0, 0); 
             
             totalDispatches++;
             dispatchesSinceLastFps++;
@@ -632,20 +634,27 @@ int main(int argc, char* argv[])
             Sleep(3000); 
         }
         std::cout << "\n[SUCCESS] Automated Suite Completed All 11 Tests!" << std::endl;
-    } else {
-        RunBenchmarkKernel(testMode, kernelName, elements);
-    }
+        } else {
+            RunBenchmarkKernel(testMode, kernelName, elements);
+        }
 
-    // Final Core Cleanup
-    SAFE_RELEASE(pDepthStencilState);
-    SAFE_RELEASE(pConstantBuffer);
-    SAFE_RELEASE(pDummyVS);
-    SAFE_RELEASE(pDummyPS);
-    SAFE_RELEASE(pDepthStencilView);
-    SAFE_RELEASE(pRenderTargetView);
-    SAFE_RELEASE(pSwapChain);
-    SAFE_RELEASE(pContext);
-    SAFE_RELEASE(pDevice);
+        // Final Core Cleanup for this specific run
+        SAFE_RELEASE(pDepthStencilState);
+        SAFE_RELEASE(pConstantBuffer);
+        SAFE_RELEASE(pDummyVS);
+        SAFE_RELEASE(pDummyPS);
+        SAFE_RELEASE(pDepthStencilView);
+        SAFE_RELEASE(pRenderTargetView);
+        SAFE_RELEASE(pSwapChain);
+        SAFE_RELEASE(pContext);
+        SAFE_RELEASE(pDevice);
+
+        std::cout << "\n*** Test Finished! Press [Enter] to return to the main menu... ***\n";
+        std::cin.ignore(10000, '\n');
+        std::cin.get();
+        system("cls");  // Clear screen for the next run
+        
+        } // End of while(true)
 
     } catch (const std::exception& e) {
         LogErrorToFile(std::string("Fatal C++ Exception: ") + e.what());
