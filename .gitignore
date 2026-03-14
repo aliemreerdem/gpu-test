@@ -19,3 +19,6 @@
 # Temporary files
 *.tmp
 *.bak
+
+# AI/Agent Data
+.agent/
