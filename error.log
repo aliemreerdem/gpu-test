@@ -1,3 +1,0 @@
-[2026-03-14 12:13:58] ERROR: Failed to compile shader. Compilation Error. | HRESULT: 0x80070002
-[2026-03-14 12:14:38] ERROR: Failed to compile shader. Compilation Error. | HRESULT: 0x80070002
-[2026-03-14 13:34:00] ERROR: GPU Driver was reset by Windows (TDR). Workload timeout or overheat. | HRESULT: 0x887a0020
