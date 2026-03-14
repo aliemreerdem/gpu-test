@@ -493,7 +493,19 @@ int main(int argc, char* argv[])
                 }
             }
 
-            // V18/V19: Re-bind EVERYTHING every frame, including the new Depth/Stencil buffer.
+            // V26: Dispatch Quantization for AMD Windowed Heuristics
+            // Heuristic Bypass: If FPS drops < 30 in Windowed Mode, AMD driver marks the process as 
+            // "non-interactive compute" and disables FPS metrics overlay.
+            // Tests 1-9 originally executed 16 Million elements per frame, stalling the GPU for 150ms (6 FPS).
+            // To fix this, we dramatically reduce the per-frame Dispatch size for heavy kernels to ensure 
+            // Present() loops at 60+ FPS, satisfying AMD's interactive game heuristic.
+            int dispatchSize = totalElements;
+            if (currentTestMode >= 1 && currentTestMode <= 9 && currentTestMode != 6) {
+                dispatchSize = totalElements / 16; // 1M elements, ensuring ~60-120 FPS
+            } else if (currentTestMode == 6) {
+                dispatchSize = totalElements / 32; // Massive VRAM filler takes extreme time, scale down more
+            }
+            
             pContext->OMSetRenderTargets(1, &pRenderTargetView, pDepthStencilView);
             pContext->RSSetViewports(1, &vp);
             if (pDummyVS) pContext->VSSetShader(pDummyVS, nullptr, 0);
@@ -529,7 +541,7 @@ int main(int argc, char* argv[])
             // Bind Compute Shader and UAVs right before dispatch
             pContext->CSSetShader(pComputeShader, nullptr, 0);
             pContext->CSSetUnorderedAccessViews(0, (currentTestMode == 9) ? 4 : 2, uavs, nullptr);
-            pContext->Dispatch(totalElements / 256, 1, 1);
+            pContext->Dispatch(dispatchSize / 256, 1, 1);
             
             // Note: DO NOT call pContext->Flush() here. 
             // Calling Flush forces the command queue to submit the Draw and Compute commands 
