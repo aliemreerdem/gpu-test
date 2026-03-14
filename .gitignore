@@ -6,10 +6,10 @@
 *.pdb
 *.lib
 
-# Logs and Outputs
+# Logs and Data Outputs
 *.log
-benchmark_results.csv
-build_output.log
+*.csv
+*.txt
 
 # IDEs
 .vs/

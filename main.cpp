@@ -345,7 +345,7 @@ int main()
     pDevice->CreateBuffer(&cbDesc, nullptr, &pConstantBuffer);
 
     {
-        std::ifstream vsFile("vs_dummy.cso", std::ios::binary | std::ios::ate);
+        std::ifstream vsFile("shaders\\vs_dummy.cso", std::ios::binary | std::ios::ate);
         if (vsFile.is_open()) {
             std::streamsize size = vsFile.tellg();
             vsFile.seekg(0, std::ios::beg);
@@ -354,10 +354,10 @@ int main()
                 pDevice->CreateVertexShader(vsData.data(), vsData.size(), nullptr, &pDummyVS);
             }
         } else {
-            LogErrorToFile("Could not open vs_dummy.cso. Did you run build.bat?");
+            LogErrorToFile("Could not open shaders\\vs_dummy.cso. Did you run build.bat?");
         }
         
-        std::ifstream psFile("ps_dummy.cso", std::ios::binary | std::ios::ate);
+        std::ifstream psFile("shaders\\ps_dummy.cso", std::ios::binary | std::ios::ate);
         if (psFile.is_open()) {
             std::streamsize size = psFile.tellg();
             psFile.seekg(0, std::ios::beg);
@@ -366,7 +366,7 @@ int main()
                 pDevice->CreatePixelShader(psData.data(), psData.size(), nullptr, &pDummyPS);
             }
         } else {
-            LogErrorToFile("Could not open ps_dummy.cso.");
+            LogErrorToFile("Could not open shaders\\ps_dummy.cso.");
         }
     }
 
@@ -381,12 +381,12 @@ int main()
         std::cout << "--------------------------------------------------" << std::endl;
         
         // 2. Load Pre-compiled Compute Shader (CSO)
-        std::string shaderFilename = "kernel_" + std::to_string(currentTestMode) + ".cso";
+        std::string shaderFilename = "shaders\\kernel_" + std::to_string(currentTestMode) + ".cso";
         
         std::ifstream shaderFile(shaderFilename, std::ios::binary | std::ios::ate);
         if (!shaderFile.is_open()) {
             LogErrorToFile("Failed to find pre-compiled shader file: " + shaderFilename, E_FAIL);
-            LogErrorToFile("Please run build.bat first so it generates the .cso files using fxc.exe");
+            LogErrorToFile("Please run build.bat first so it generates the .cso files in the shaders directory.");
             return -1;
         }
 

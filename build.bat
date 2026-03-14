@@ -4,19 +4,20 @@ echo GPU Stress Tester - Build Script
 echo =======================================
 
 echo Compiling Compute Shaders offline (FXC.exe)...
-fxc.exe /nologo /E CSMath /T cs_5_0 /Fo kernel_1.cso stress.hlsl
-fxc.exe /nologo /E CSMemory /T cs_5_0 /Fo kernel_2.cso stress.hlsl
-fxc.exe /nologo /E CSGame /T cs_5_0 /Fo kernel_3.cso stress.hlsl
-fxc.exe /nologo /E CSCrypto /T cs_5_0 /Fo kernel_4.cso stress.hlsl
-fxc.exe /nologo /E CSRayTrace /T cs_5_0 /Fo kernel_5.cso stress.hlsl
-fxc.exe /nologo /E CSMemoryMassive /T cs_5_0 /Fo kernel_6.cso stress.hlsl
-fxc.exe /nologo /E CSParticles /T cs_5_0 /Fo kernel_7.cso stress.hlsl
-fxc.exe /nologo /E CSCache /T cs_5_0 /Fo kernel_8.cso stress.hlsl
-fxc.exe /nologo /E CSDeferred /T cs_5_0 /Fo kernel_9.cso stress.hlsl
-fxc.exe /nologo /E CSRedDead2 /T cs_5_0 /Fo kernel_10.cso stress.hlsl
-fxc.exe /nologo /E CSDiablo4 /T cs_5_0 /Fo kernel_11.cso stress.hlsl
-fxc.exe /nologo /E VSMain /T vs_5_0 /Fo vs_dummy.cso dummy.hlsl
-fxc.exe /nologo /E PSMain /T ps_5_0 /Fo ps_dummy.cso dummy.hlsl
+if not exist shaders mkdir shaders
+fxc.exe /nologo /E CSMath /T cs_5_0 /Fo shaders\kernel_1.cso stress.hlsl
+fxc.exe /nologo /E CSMemory /T cs_5_0 /Fo shaders\kernel_2.cso stress.hlsl
+fxc.exe /nologo /E CSGame /T cs_5_0 /Fo shaders\kernel_3.cso stress.hlsl
+fxc.exe /nologo /E CSCrypto /T cs_5_0 /Fo shaders\kernel_4.cso stress.hlsl
+fxc.exe /nologo /E CSRayTrace /T cs_5_0 /Fo shaders\kernel_5.cso stress.hlsl
+fxc.exe /nologo /E CSMemoryMassive /T cs_5_0 /Fo shaders\kernel_6.cso stress.hlsl
+fxc.exe /nologo /E CSParticles /T cs_5_0 /Fo shaders\kernel_7.cso stress.hlsl
+fxc.exe /nologo /E CSCache /T cs_5_0 /Fo shaders\kernel_8.cso stress.hlsl
+fxc.exe /nologo /E CSDeferred /T cs_5_0 /Fo shaders\kernel_9.cso stress.hlsl
+fxc.exe /nologo /E CSRedDead2 /T cs_5_0 /Fo shaders\kernel_10.cso stress.hlsl
+fxc.exe /nologo /E CSDiablo4 /T cs_5_0 /Fo shaders\kernel_11.cso stress.hlsl
+fxc.exe /nologo /E VSMain /T vs_5_0 /Fo shaders\vs_dummy.cso dummy.hlsl
+fxc.exe /nologo /E PSMain /T ps_5_0 /Fo shaders\ps_dummy.cso dummy.hlsl
 echo.
 
 echo Compiling main.cpp...
