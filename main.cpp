@@ -55,7 +55,7 @@ void LogErrorToFile(const std::string& message, HRESULT hr = S_OK) {
 
 const int NUM_ELEMENTS = 1024 * 1024 * 16; 
 
-int main(int argc, char* argv[])
+int main()
 {
     try {
         // V25: Persistent execution loop
@@ -84,12 +84,20 @@ int main(int argc, char* argv[])
         while (testMode < 1 || testMode > 12) {
             std::cout << "\nSelect test mode (1-12): ";
             std::cin >> testMode;
+            if (std::cin.fail()) {
+                std::cin.clear();
+                std::cin.ignore(10000, '\n');
+            }
         }
 
-            while (durationSeconds < 0) {
-                std::cout << "Enter duration in seconds (0 for infinite): ";
-                std::cin >> durationSeconds;
+        while (durationSeconds < 0) {
+            std::cout << "Enter duration in seconds (0 for infinite): ";
+            std::cin >> durationSeconds;
+            if (std::cin.fail()) {
+                std::cin.clear();
+                std::cin.ignore(10000, '\n');
             }
+        }
 
             const char* kernelName = "CSMath";
     if (testMode == 2) kernelName = "CSMemory";
@@ -141,7 +149,9 @@ int main(int argc, char* argv[])
     if (vAdapters.size() > 1) {
         std::cout << "\nMultiple GPUs detected. Enter GPU index (0-" << vAdapters.size() - 1 << ") to test: ";
         std::cin >> selectedGpuIndex;
-        if (selectedGpuIndex < 0 || selectedGpuIndex >= vAdapters.size()) {
+        if (std::cin.fail() || selectedGpuIndex < 0 || selectedGpuIndex >= vAdapters.size()) {
+            std::cin.clear();
+            std::cin.ignore(10000, '\n');
             std::cout << "Invalid index, defaulting to 0." << std::endl;
             selectedGpuIndex = 0;
         }
@@ -533,10 +543,13 @@ int main(int argc, char* argv[])
             pContext->CSSetUnorderedAccessViews(0, (currentTestMode == 9) ? 4 : 2, uavs, nullptr);
             pContext->Dispatch(dispatchSize / 256, 1, 1);
             
-            // Note: DO NOT call pContext->Flush() here. 
-            // Calling Flush forces the command queue to submit the Draw and Compute commands 
-            // BEFORE the Present packet. This strips the 3D activity from the Present() ticket 
-            // and tricks AMD/MSI overlays into thinking the frame was completely empty (0 FPS).
+            // V27: Forcing GPU execution synchronization.
+            // Since we abandoned the artificial AMD FPS metric constraint for Tests 1-9, 
+            // the DirectX command queue will buffer these massive compute payloads instantly,
+            // causing the CPU `while` loop to hit the 5-second timer in < 1 second.
+            // Flushing the context forces the GPU to physically execute the queued work, 
+            // maximizing hardware heat and aligning the CPU timer with true GPU execution time.
+            pContext->Flush();
             
             pSwapChain->Present(0, 0); 
             
@@ -657,9 +670,13 @@ int main(int argc, char* argv[])
         }
         UnregisterClass("GPUStressClass", GetModuleHandle(nullptr));
 
-        std::cout << "\n*** Test Finished! Press [Enter] to return to the main menu... ***\n";
+        std::cout << "\n*** Test Finished! ***\n";
+        
+        // Clear any accidental keystrokes buffered during the test before pausing
+        std::cin.clear();
         std::cin.ignore(10000, '\n');
-        std::cin.get();
+        
+        system("pause"); // "Press any key to continue..."
         system("cls");  // Clear screen for the next run
         
         } // End of while(true)
