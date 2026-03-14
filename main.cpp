@@ -493,18 +493,8 @@ int main(int argc, char* argv[])
                 }
             }
 
-            // V26: Dispatch Quantization for AMD Windowed Heuristics
-            // Heuristic Bypass: If FPS drops < 30 in Windowed Mode, AMD driver marks the process as 
-            // "non-interactive compute" and disables FPS metrics overlay.
-            // Tests 1-9 originally executed 16 Million elements per frame, stalling the GPU for 150ms (6 FPS).
-            // To fix this, we dramatically reduce the per-frame Dispatch size for heavy kernels to ensure 
-            // Present() loops at 60+ FPS, satisfying AMD's interactive game heuristic.
+            // Tests 1-9 natively push 16.7 Million items at once to maximize raw GPU/VRAM heat, ignoring FPS metrics.
             int dispatchSize = totalElements;
-            if (currentTestMode >= 1 && currentTestMode <= 9 && currentTestMode != 6) {
-                dispatchSize = totalElements / 16; // 1M elements, ensuring ~60-120 FPS
-            } else if (currentTestMode == 6) {
-                dispatchSize = totalElements / 32; // Massive VRAM filler takes extreme time, scale down more
-            }
             
             pContext->OMSetRenderTargets(1, &pRenderTargetView, pDepthStencilView);
             pContext->RSSetViewports(1, &vp);
