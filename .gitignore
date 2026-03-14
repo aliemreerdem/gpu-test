@@ -1,0 +1,21 @@
+# Visual Studio / C++ / DirectX Built Files
+*.obj
+*.o
+*.cso
+*.exe
+*.pdb
+*.lib
+
+# Logs and Outputs
+*.log
+benchmark_results.csv
+build_output.log
+
+# IDEs
+.vs/
+.vscode/
+*.user
+
+# Temporary files
+*.tmp
+*.bak
