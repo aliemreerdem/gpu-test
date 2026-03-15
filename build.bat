@@ -18,13 +18,15 @@ fxc.exe /nologo /E CSRedDead2 /T cs_5_0 /Fo shaders\kernel_10.cso stress.hlsl
 fxc.exe /nologo /E CSDiablo4 /T cs_5_0 /Fo shaders\kernel_11.cso stress.hlsl
 fxc.exe /nologo /E VSMain /T vs_5_0 /Fo shaders\vs_dummy.cso dummy.hlsl
 fxc.exe /nologo /E PSMain /T ps_5_0 /Fo shaders\ps_dummy.cso dummy.hlsl
-echo.
-
-echo Compiling main.cpp...
-cl.exe /EHsc /W4 /Ox /MT /nologo main.cpp /link /OUT:Game.exe d3d11.lib dxgi.lib user32.lib
+echo Compiling C++ OOP Architecture...
+cl.exe /EHsc /W4 /Ox /MT /nologo main.cpp src\core\*.cpp src\graphics\*.cpp /link /OUT:Game.exe d3d11.lib dxgi.lib user32.lib
 
 if %errorlevel% neq 0 goto :error
 echo.
+echo Cleaning up intermediate Object (.obj) files...
+del *.obj
+if exist src\core\*.obj del src\core\*.obj
+if exist src\graphics\*.obj del src\graphics\*.obj
 echo [SUCCESS] Build completed successfully.
 echo Run "Game.exe" to start the stress test.
 echo To stop the test, press Ctrl+C in the console window.
