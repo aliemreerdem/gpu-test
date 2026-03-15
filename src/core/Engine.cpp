@@ -54,9 +54,6 @@ void Engine::Run() {
     // Fixed tick message pump handling (Carmack style)
     while (m_window->ProcessMessages() && !bForceQuit) {
         
-        // V26: Artificial Thread Delay (AMD Game Pacing Heuristic)
-        Sleep(1);
-        
         m_benchmarker->Dispatch(dispatchSize);
         m_renderer->Present();
 
@@ -64,6 +61,10 @@ void Engine::Run() {
             frameNum++;
             continue;
         }
+
+        // V35 GPU Starvation Fix: Only sleep once per FULL logical payload cycle
+        // rather than every sub-frame slice to avoid 15.6ms Windows timer stalling
+        Sleep(1);
 
         auto tEnd = std::chrono::high_resolution_clock::now();
         double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
