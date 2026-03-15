@@ -14,7 +14,7 @@ public:
     ID3D11Device* GetDevice() const { return m_pDevice; }
     ID3D11DeviceContext* GetContext() const { return m_pContext; }
 
-    std::vector<IDXGIAdapter*> EnumerateAdapters();
+    static std::vector<IDXGIAdapter*> EnumerateAdapters();
     
     // Core dummy states for AAA signature
     ID3D11DepthStencilState* GetDepthStencilState() const { return m_pDepthStencilState; }

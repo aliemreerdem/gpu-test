@@ -1,6 +1,7 @@
 // main.cpp - Entry Point Bootstrapper
 #include "src/core/Engine.h"
 #include "src/core/Logger.h"
+#include "src/graphics/Renderer.h"
 #include <iostream>
 #include <vector>
 
@@ -49,7 +50,43 @@ int main()
                 }
             }
 
-            int selectedGpuIndex = 0; // We default to 0 for CLI simplicity in the new modular system
+            std::cout << "\nScanning for compatible GPUs..." << std::endl;
+            auto adapters = Renderer::EnumerateAdapters();
+            int selectedGpuIndex = 0;
+            
+            if (adapters.empty()) {
+                std::cout << "[ERROR] No DirectX 11 compatible GPUs found!" << std::endl;
+                system("pause");
+                return -1;
+            }
+
+            if (adapters.size() == 1) {
+                DXGI_ADAPTER_DESC desc;
+                adapters[0]->GetDesc(&desc);
+                std::wcout << "[Selected GPU]: " << desc.Description << " (" << (desc.DedicatedVideoMemory / 1024 / 1024) << " MB VRAM)\n";
+            } else {
+                std::cout << "\nAvailable GPUs:" << std::endl;
+                for (size_t i = 0; i < adapters.size(); ++i) {
+                    DXGI_ADAPTER_DESC desc;
+                    adapters[i]->GetDesc(&desc);
+                    std::wcout << "  [" << i << "] " << desc.Description << " (" << (desc.DedicatedVideoMemory / 1024 / 1024) << " MB VRAM)\n";
+                }
+                
+                selectedGpuIndex = -1;
+                while (selectedGpuIndex < 0 || selectedGpuIndex >= (int)adapters.size()) {
+                    std::cout << "\nSelect target GPU index (0-" << adapters.size() - 1 << "): ";
+                    std::cin >> selectedGpuIndex;
+                    if (std::cin.fail()) {
+                        std::cin.clear();
+                        std::cin.ignore(10000, '\n');
+                        selectedGpuIndex = -1;
+                    }
+                }
+            }
+
+            for (auto adapter : adapters) {
+                adapter->Release();
+            }
 
             if (testMode == 12) {
                 std::cout << "\n[AUTOMATED SUITE] Running all tests for " << durationSeconds << " seconds each.\n" << std::endl;

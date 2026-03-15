@@ -18,6 +18,7 @@ fxc.exe /nologo /E CSRedDead2 /T cs_5_0 /Fo shaders\kernel_10.cso src\hlsl\stres
 fxc.exe /nologo /E CSDiablo4 /T cs_5_0 /Fo shaders\kernel_11.cso src\hlsl\stress.hlsl
 fxc.exe /nologo /E VSMain /T vs_5_0 /Fo shaders\vs_dummy.cso src\hlsl\dummy.hlsl
 fxc.exe /nologo /E PSMain /T ps_5_0 /Fo shaders\ps_dummy.cso src\hlsl\dummy.hlsl
+
 echo Compiling C++ OOP Architecture...
 cl.exe /EHsc /W4 /Ox /MT /nologo main.cpp src\core\*.cpp src\graphics\*.cpp /link /OUT:Game.exe d3d11.lib dxgi.lib user32.lib
 
@@ -37,4 +38,3 @@ echo.
 echo [ERROR] Build failed. 
 echo Ensure you are running this from a 'x64 Native Tools Command Prompt for VS 2022' (or similar).
 goto :EOF
-
