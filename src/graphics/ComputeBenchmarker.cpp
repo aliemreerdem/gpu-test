@@ -24,17 +24,18 @@ ComputeBenchmarker::~ComputeBenchmarker() {
 }
 
 bool ComputeBenchmarker::LoadKernel(int testMode) {
-    const char* kernelName = "CSMath";
-    if (testMode == 2) kernelName = "CSMemory";
-    if (testMode == 3) kernelName = "CSGame";
-    if (testMode == 4) kernelName = "CSCrypto";
-    if (testMode == 5) kernelName = "CSRayTrace";
-    if (testMode == 6) kernelName = "CSMemoryMassive"; 
-    if (testMode == 7) kernelName = "CSParticles";
-    if (testMode == 8) kernelName = "CSCache";
-    if (testMode == 9) kernelName = "CSDeferred";
-    if (testMode == 10) kernelName = "CSRedDead2";
-    if (testMode == 11) kernelName = "CSDiablo4";
+    std::string kernelName;
+    if (testMode == 1) kernelName = "kernel_1";
+    else if (testMode == 2) kernelName = "kernel_2";
+    else if (testMode == 3) kernelName = "kernel_3";
+    else if (testMode == 4) kernelName = "kernel_4";
+    else if (testMode == 5) kernelName = "kernel_5";
+    else if (testMode == 6) kernelName = "kernel_6"; 
+    else if (testMode == 7) kernelName = "kernel_7";
+    else if (testMode == 8) kernelName = "kernel_8";
+    else if (testMode == 9) kernelName = "kernel_9";
+    else if (testMode == 10) kernelName = "kernel_10";
+    else if (testMode == 11) kernelName = "kernel_11";
 
     std::string shaderPath = std::string("shaders\\") + std::string(kernelName) + ".cso";
     std::ifstream file(shaderPath, std::ios::binary | std::ios::ate);
